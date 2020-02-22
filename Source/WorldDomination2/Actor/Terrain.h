@@ -20,13 +20,20 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere)
-	UProceduralMeshComponent *TerrainMesh;
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void PostActorCreated() override;
+	virtual void PostLoad() override;
 
-private:
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
+	UProceduralMeshComponent* TerrainMesh;
 
+	// Mesh data
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+
+	void AddTriangle(int32 V1, int32 V2, int32 V3);
+	void GenerateCubeMesh();
+	
 };
