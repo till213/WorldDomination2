@@ -11,7 +11,7 @@ ATerrain::ATerrain()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	TerrainMesh = CreateDefaultSubobject<UProceduralMeshComponent>("TerrainMesh");
+	TerrainMesh = CreateDefaultSubobject<UProceduralMeshComponent>("Terrain");
 	SetRootComponent(TerrainMesh);
 	TerrainMesh->bUseAsyncCooking = true;
 }
@@ -103,5 +103,5 @@ void ATerrain::GenerateCubeMesh()
 
 	TerrainMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, TArray<FVector>(), TArray<FVector2D>(), VertexColors, TArray<FProcMeshTangent>(),true);
 	// Enable collision data
-	TerrainMesh->ContainsPhysicsTriMeshData(true);
+	// TerrainMesh->ContainsPhysicsTriMeshData(true);
 }
