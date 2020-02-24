@@ -53,31 +53,23 @@ void ATerrain::AddTriangle(int32 V1, int32 V2, int32 V3)
 
 void ATerrain::GenerateCubeMesh()
 {
-	// 6 sides on cube, 4 verts each (corners)
-	
-	// These are relative locations to the placed Actor in the world
-	Vertices.Add(FVector(-100, -100, 0)); // bottom-left
-	Vertices.Add(FVector(100, 100, 0)); // top-right
-	Vertices.Add(FVector(100, -100, 0)); // bottom-right
-	
-	Vertices.Add(FVector(-100, -100, 0)); // bottom-left
-	Vertices.Add(FVector(-100, 100, 0)); // top-left
-	Vertices.Add(FVector(100, 100, 0)); // top-right
+	// Actor local coordinates
+	Vertices.Add(FVector(100, -100, 0)); // bottom-left
+	Vertices.Add(FVector(-100, -100, 0)); // bottom-right
+	Vertices.Add(FVector(-100, 100, 0)); // top-right
+	Vertices.Add(FVector(100, 100, 0)); // top-left
 	
 	// Rectangle
 	AddTriangle(0, 1, 2);
-	AddTriangle(3, 4, 5);
+	AddTriangle(0, 2, 3);
 
 	TArray<FLinearColor> VertexColors;
 	VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
 	VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
 	VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
-
-	VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
-	VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
-	VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
-
+	VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
+	
 	TerrainMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, TArray<FVector>(), TArray<FVector2D>(), VertexColors, TArray<FProcMeshTangent>(),true);
 	// Enable collision data
-	TerrainMesh->ContainsPhysicsTriMeshData(true);
+	TerrainMesh->ContainsPhysicsTriMeshData(true);	
 }
