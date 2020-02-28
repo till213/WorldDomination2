@@ -5,23 +5,11 @@
 #include <limits>
 
 Generator::Generator()
-  : ProfileLinesX(nullptr),
-    ProfileLinesZ(nullptr),
-    VertexElevations(nullptr)
 {
 }
 
 Generator::~Generator()
 {
-    if (ProfileLinesX != nullptr) {
-        delete ProfileLinesX;
-    }
-    if (ProfileLinesZ != nullptr) {
-        delete ProfileLinesZ;
-    }
-    if (VertexElevations != nullptr) {
-        delete VertexElevations;
-    }
 }
 
 // Private
@@ -70,35 +58,37 @@ void Generator::CreateProfiles()
     ProfileDefinition.weight4 = TerrainDefinition.weight4;
 
     // Profile lines X
-    ProfileLinesX = new float[nofProfileLines * NofPoints];
-    for (int p = 0; p < nofProfileLines - 1; ++p) {
+    ProfileLinesX.resize(nofProfileLines);
+    for (int line = 0; line < nofProfileLines - 1; ++line) {
         RandomiseProfile();
-        float x = x0;
-        for (int u = 0; u < NofPoints; ++u) {
-            ProfileLinesX[p * NofPoints + u] = Evaluate(x);
+        ProfileLinesX[line].resize(NofPoints);
+        float x = x0;       
+        for (int point = 0; point < NofPoints; ++point) {
+            ProfileLinesX[line][point] = Evaluate(x);
             x += dx;
         } // x
     }
 
     // Profile lines Z
-    ProfileLinesZ = new float[nofProfileLines * NofPoints];
-    for (int o = 0; o < nofProfileLines - 1; ++o) {
+    ProfileLinesZ.resize(nofProfileLines);
+    for (int line = 0; line < nofProfileLines - 1; ++line) {
         RandomiseProfile();
+        ProfileLinesZ[line].resize(NofPoints);
         float z = z0;
-        for (int v = 0; v < NofPoints; ++v) {
-            ProfileLinesZ [o * NofPoints + v] = Evaluate(z);
+        for (int point = 0; point < NofPoints; ++point) {
+            ProfileLinesZ[line][point] = Evaluate(z);
             z += dz;
         } // z
     }
 
     // Last profile line identical to first one
-    for (int u = 0; u < NofPoints; ++u) {
-        ProfileLinesX [(nofProfileLines - 1) * NofPoints + u] = ProfileLinesX [0, u];
+    for (int point = 0; point < NofPoints; ++point) {
+        ProfileLinesX[nofProfileLines - 1][point] = ProfileLinesX[0][point]];
     }
 
     // Last profile line identical to first one
-    for (int v = 0; v < NofPoints; ++v) {
-        ProfileLinesZ [(nofProfileLines - 1) * NofPoints + v] = ProfileLinesZ [0, v];
+    for (int point = 0; point < NofPoints; ++point) {
+        ProfileLinesZ[nofProfileLines - 1][point] = ProfileLinesZ[0][point]];
     }
 
 }
@@ -106,7 +96,7 @@ void Generator::CreateProfiles()
 void Generator::Elevate()
 {
     int nofPoints = TerrainDefinition.nofTiles + 1;
-    VertexElevations = new float[nofPoints * nofPoints];
+    HeightMap.resize(nofPoints);
     int nofTilesPerPatch = TerrainDefinition.nofTiles / TerrainDefinition.nofPatches;
     int nofContourLines = TerrainDefinition.nofPatches + 1;
 
@@ -115,25 +105,26 @@ void Generator::Elevate()
     // Interpolate profile lines across X- and Z-direction (Y is up)
     for (int p = 0; p < TerrainDefinition.nofPatches; ++p) {
         for (int v = p * nofTilesPerPatch; v < p * nofTilesPerPatch + nofTilesPerPatch; ++v) {
+            HeightMap[v].resize(nofPoints);
             for (int o = 0; o < TerrainDefinition.nofPatches; ++o) {					
                 float t = (float)(v % nofTilesPerPatch) / (float)nofTilesPerPatch;
                 for (int u = o * nofTilesPerPatch; u < o * nofTilesPerPatch + nofTilesPerPatch; ++u) {
                     float s = (float)(u % nofTilesPerPatch) / (float)nofTilesPerPatch;
             
                     int p1 = ((p - 1) % nofContourLines + nofContourLines) % nofContourLines;
-                    float y1 = CubicInterpolate(ProfileLinesX[p1, u],
-                                                ProfileLinesX[p, u],
-                                                ProfileLinesX[p + 1, u],
-                                                ProfileLinesX[(p + 2) % nofContourLines, u],
+                    float y1 = CubicInterpolate(ProfileLinesX[p1][u],
+                                                ProfileLinesX[p][u],
+                                                ProfileLinesX[p + 1][u],
+                                                ProfileLinesX[(p + 2) % nofContourLines][u],
                                                 t);
                     p1 = ((o - 1) % nofContourLines + nofContourLines) % nofContourLines;
-                    float y2 = CubicInterpolate(ProfileLinesZ[p1, v],
-                                                ProfileLinesZ[o, v],
-                                                ProfileLinesZ[o + 1, v],
-                                                ProfileLinesZ[(o + 2) % nofContourLines, v],
+                    float y2 = CubicInterpolate(ProfileLinesZ[p1][v],
+                                                ProfileLinesZ[o][v],
+                                                ProfileLinesZ[o + 1][v],
+                                                ProfileLinesZ[(o + 2) % nofContourLines][v],
                                                 s);
                     float y = y1 + y2;
-                    VertexElevations[u * nofPoints + v] = y;
+                    HeightMap[u][v] = y;
                     if (y > MaxElevation) {
                         MaxElevation = y;
                     } else if (y < MinElevation) {
@@ -144,12 +135,26 @@ void Generator::Elevate()
         }
     }
 
-    // Border lines
-    for (int u = 0; u < nofPoints; ++u) {
-        VertexElevations [u, nofPoints - 1] = VertexElevations [u, 0];
+    // Edge lines
+    for (int point = 0; point < nofPoints; ++point) {
+        HeightMap[u][nofPoints - 1] = HeightMap[u][0];
     }
-    for (int v = 0; v < nofPoints; ++v) {
-        VertexElevations [nofPoints - 1, v] = VertexElevations [0, v];
+    for (int point = 0; point < nofPoints; ++point) {
+        HeightMap[nofPoints - 1][v] = HeightMap[0][v];
+    }
+}
+
+void Generator::Normalise()
+{
+    int nofPoints = TerrainDefinition.nofTiles + 1;
+
+    if (MinElevation < -1.0f || MaxElevation > 1.0f) {
+        float max = std::max(std:abs(minElevation), std::abs(maxElevation));
+        for (int v = 0; v < nofPoints; ++v) {
+            for (int u = 0; u < nofPoints; ++u) {
+                HeightMap[v][u] /= max;
+            }
+        }
     }
 }
 
